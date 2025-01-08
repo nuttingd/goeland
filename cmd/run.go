@@ -134,10 +134,12 @@ func formatEmailSubject(source *goeland.Source, entry *goeland.Entry, templateSt
 		SourceTitle string
 		SourceName  string
 		Today       time.Time
-	}{EntryTitle: entry.Title,
+	}{
+		EntryTitle: entry.Title,
 		SourceTitle: source.Title,
 		SourceName:  source.Name,
-		Today:       time.Now()}
+		Today:       time.Now(),
+	}
 	var output bytes.Buffer
 	if strings.TrimSpace(templateString) == "" {
 		templateString = `{{.EntryTitle}}`
@@ -146,12 +148,14 @@ func formatEmailSubject(source *goeland.Source, entry *goeland.Entry, templateSt
 	tpl.Execute(&output, data)
 	return output.String()
 }
-func formatHTMLEmail(entry *goeland.Entry, config config.Provider, tpl *template.Template, destination string) string {
+func formatHTMLEmail(source *goeland.Source, entry *goeland.Entry, config config.Provider, tpl *template.Template, destination string) string {
 	footer := strings.TrimSpace(config.GetString("email.footer"))
 	if footer == "" {
 		footer = footers[rand.Intn(len(footers))]
 	}
 	data := struct {
+		SourceTitle   string
+		SourceName    string
 		EntryTitle    string
 		EntryContent  string
 		EntryURL      string
@@ -163,6 +167,8 @@ func formatHTMLEmail(entry *goeland.Entry, config config.Provider, tpl *template
 		ContentID     string
 		CSS           string
 	}{
+		SourceTitle:   source.Title,
+		SourceName:    source.Name,
 		EntryTitle:    html.EscapeString(entry.Title),
 		EntryContent:  entry.Content,
 		EntryURL:      entry.URL,
@@ -301,7 +307,7 @@ func run(cmd *cobra.Command, args []string) {
 						log.Errorf("error attaching logo: %v", err)
 					}
 				}
-				html := formatHTMLEmail(&entry, config, tpl, destination)
+				html := formatHTMLEmail(source, &entry, config, tpl, destination)
 				text, err := html2text.FromString(entry.Content)
 				if err != nil {
 					text = "There was an error converting HTML content to text"
@@ -315,7 +321,7 @@ func run(cmd *cobra.Command, args []string) {
 			}
 		case "htmlfile":
 			for i, entry := range source.Entries {
-				html := formatHTMLEmail(&entry, config, tpl, destination)
+				html := formatHTMLEmail(source, &entry, config, tpl, destination)
 				var HTMLFile *os.File
 				err := os.MkdirAll("data", os.ModePerm)
 				if err != nil {
