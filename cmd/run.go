@@ -153,12 +153,20 @@ func formatHTMLEmail(source *goeland.Source, entry *goeland.Entry, config config
 	if footer == "" {
 		footer = footers[rand.Intn(len(footers))]
 	}
+	if entry.Date.IsZero() {
+		entryDate := "No entry date"
+	}
+	else {
+		entryDate := entryDate.Format("2006-01-02")
+	}
+
 	data := struct {
 		SourceTitle   string
 		SourceName    string
 		EntryTitle    string
 		EntryContent  string
 		EntryURL      string
+		EntryDate     string
 		IncludeHeader bool
 		IncludeTitle  bool
 		IncludeFooter bool
@@ -172,6 +180,7 @@ func formatHTMLEmail(source *goeland.Source, entry *goeland.Entry, config config
 		EntryTitle:    html.EscapeString(entry.Title),
 		EntryContent:  entry.Content,
 		EntryURL:      entry.URL,
+		EntryDate:     entryDate,
 		IncludeHeader: config.GetBool("email.include-header"),
 		IncludeTitle:  config.GetBool("email.include-title"),
 		IncludeFooter: config.GetBool("email.include-footer"),
